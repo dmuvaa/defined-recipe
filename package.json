@@ -6,9 +6,13 @@
     "start": "next start"
   },
   "dependencies": {
-    "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "latest",
+    "@prisma/client": "^5.17.0",
+    "@supabase/ssr": "^0.4.0",
+    "@supabase/supabase-js": "^2.45.0",
     "autoprefixer": "10.4.17",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "crypto-js": "^4.2.0",
     "geist": "^1.2.1",
     "next": "latest",
     "postcss": "8.4.33",
@@ -21,6 +25,7 @@
     "@types/node": "20.11.5",
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
-    "encoding": "^0.1.13"
+    "encoding": "^0.1.13",
+    "prisma": "^5.17.0"
   }
 }

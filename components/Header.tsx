@@ -1,44 +1,51 @@
-import NextLogo from "./NextLogo";
-import SupabaseLogo from "./SupabaseLogo";
+// components/Header.tsx
+import { useState } from 'react';
+import Link from 'next/link';
 
-export default function Header() {
+const Header = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <div className="flex flex-col gap-16 items-center">
-      <div className="flex gap-8 justify-center items-center">
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <SupabaseLogo />
-        </a>
-        <span className="border-l rotate-45 h-6" />
-        <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-          <NextLogo />
-        </a>
+    <header className="bg-white shadow-md p-4 flex justify-between items-center">
+      <div className="text-xl font-bold">
+        <Link href="/">AI Recipe Generator</Link>
       </div>
-      <h1 className="sr-only">Supabase and Next.js Starter Template</h1>
-      <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        The fastest way to build apps with{" "}
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Supabase
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://nextjs.org/"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Next.js
-        </a>
-      </p>
-      <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
-    </div>
+      <nav className="hidden md:flex space-x-4">
+        <Link href="/about">About Us</Link>
+        <Link href="/use-cases">Use Cases</Link>
+        <Link href="/how-it-works">How It Works</Link>
+        <Link href="/blog">Blog</Link>
+        <Link href="/pricing">Pricing</Link>
+      </nav>
+      <div className="md:hidden">
+        <button onClick={() => setIsOpen(!isOpen)}>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16m-7 6h7"
+            />
+          </svg>
+        </button>
+      </div>
+      {isOpen && (
+        <nav className="absolute top-16 left-0 w-full bg-white shadow-md flex flex-col items-center space-y-4 md:hidden">
+          <Link href="/about">About Us</Link>
+          <Link href="/use-cases">Use Cases</Link>
+          <Link href="/how-it-works">How It Works</Link>
+          <Link href="/blog">Blog</Link>
+          <Link href="/pricing">Pricing</Link>
+        </nav>
+      )}
+    </header>
   );
-}
+};
+
+export default Header;
