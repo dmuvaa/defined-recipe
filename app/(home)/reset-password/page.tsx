@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 
 const ResetPassword = () => {
@@ -10,14 +10,22 @@ const ResetPassword = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { token } = router.query;
+    const token = searchParams.get('token');
+    
+    if (!token) {
+      setError('Invalid or missing token.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
+
     try {
       const response = await axios.post('/api/reset-password', { token, password });
       setMessage(response.data.message);
