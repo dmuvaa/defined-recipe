@@ -4,8 +4,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
+import Header from '../../../components/Header';
+import Footer from '../../../components/Footer';
 import axios from 'axios';
 
 const PricingPage = () => {

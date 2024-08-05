@@ -4,7 +4,7 @@ import { getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { prisma } from '../../../lib/prisma';
-import AdminHeader from '../../../components/AdminHeader';
+import AdminHeader from '../../../../components/AdminHeader';
 
 const UsersPage = () => {
   const [loading, setLoading] = useState(true);
