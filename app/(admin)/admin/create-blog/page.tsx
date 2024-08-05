@@ -9,10 +9,10 @@ import { createClient } from "@/utils/supabase/client";
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const CreateBlogPage = () => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [title, setTitle] = useState<string>("");
-  const [url, setUrl] = useState<string>("");
-  const [content, setContent] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [content, setContent] = useState("");
   const router = useRouter();
   const supabase = createClient();
 
@@ -47,12 +47,20 @@ const CreateBlogPage = () => {
     e.preventDefault();
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("No session found");
+      }
+
       const { data, error } = await supabase.from("blogs").insert([
         {
           title,
           url,
           content,
-          author_id: supabase.auth.user()?.id ?? null,
+          author_id: session.user.id,
         },
       ]);
 
