@@ -1,32 +1,32 @@
-// // src/app/api/subscription/route.ts
-// import { NextApiRequest, NextApiResponse } from 'next';
-// import Paystack from 'paystack-node';
-// import { getServerSession } from 'next-auth';
-// import { authOptions } from '../auth/[...nextauth]/route';
-// import { prisma } from '../../lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from "@/utils/supabase/server";
+import { prisma } from '../../lib/prisma';
+import Paystack from 'paystack-node';
 
-// const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY);
+const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY);
 
-// export default async (req: NextApiRequest, res: NextApiResponse) => {
-//   const session = await getServerSession(req, res, authOptions);
-//   if (!session) {
-//     return res.status(401).json({ message: 'Unauthorized' });
-//   }
+export async function POST(req: NextRequest) {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-//   const { plan } = req.body;
-//   const amount = plan === 'monthly' ? 499 * 100 : 3999 * 100;
-//   const reference = `sub_${session.userId}_${Date.now()}`;
+  if (!session) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
-//   try {
-//     const response = await paystack.transaction.initialize({
-//       email: session.user.email,
-//       amount,
-//       reference,
-//       callback_url: `${process.env.NEXTAUTH_URL}/api/subscription/webhook`,
-//     });
+  const { plan } = await req.json();
+  const amount = plan === 'monthly' ? 499 * 100 : 3999 * 100;
+  const reference = `sub_${session.user.id}_${Date.now()}`;
 
-//     res.status(200).json({ authorization_url: response.data.authorization_url });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
+  try {
+    const response = await paystack.transaction.initialize({
+      email: session.user.email,
+      amount,
+      reference,
+      callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription/webhook`,
+    });
+
+    return NextResponse.json({ authorization_url: response.data.authorization_url });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
