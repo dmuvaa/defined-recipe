@@ -1,36 +1,27 @@
-// src/app/api/initialize-transaction/route.ts
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
-import axios from 'axios';
+import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 
-export async function POST(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getSession({ req });
-
-  if (!session) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  const { plan } = req.body;
-  const amount = plan === 'monthly' ? 499 * 100 : 3999 * 100;
-
-  try {
-    const response = await axios.post('https://api.paystack.co/transaction/initialize', {
-      email: session.user.email,
+export async function POST(req: NextRequest) {
+  const { email, amount } = await req.json();
+  const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+  
+  const response = await fetch('https://api.paystack.co/transaction/initialize', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
       amount,
-      metadata: {
-        userId: session.user.id,
-        plan,
-      },
-      callback_url: `${process.env.NEXTAUTH_URL}/api/webhook`,
-    }, {
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    }),
+  });
 
-    return res.status(200).json({ authorization_url: response.data.data.authorization_url });
-  } catch (error) {
-    return res.status(500).json({ error: 'Error initializing payment' });
+  const data = await response.json();
+
+  if (data.status) {
+    return NextResponse.json(data.data); // Success: return the initialization data
+  } else {
+    return NextResponse.json({ error: 'Failed to initialize transaction' }, { status: 500 });
   }
 }
