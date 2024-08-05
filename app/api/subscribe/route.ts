@@ -34,10 +34,10 @@
 // }
 
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../lib/prisma';
 
-export async function POST(req: NextApiRequest, res: NextApiResponse) {
+export async function POST(req: NextRequest, res: NextResponse) {
   try {
     const { userId, plan, startDate, endDate } = req.body;
     if (!userId || !plan || !startDate || !endDate) {
