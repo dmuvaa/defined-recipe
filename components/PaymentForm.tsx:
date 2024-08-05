@@ -1,0 +1,72 @@
+import { useState } from 'react';
+
+const PaymentForm = () => {
+  const [email, setEmail] = useState('');
+  const [amount, setAmount] = useState('');
+
+  const payWithPaystack = (e) => {
+    e.preventDefault();
+
+    const handler = PaystackPop.setup({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      email: email,
+      amount: amount * 100, // Paystack expects amount in kobo
+      ref: '' + Math.floor(Math.random() * 1000000000 + 1),
+      onClose: function () {
+        alert('Window closed.');
+      },
+      callback: function (response) {
+        alert('Payment complete! Reference: ' + response.reference);
+        // Make an AJAX call to your server with the reference to verify the transaction
+        verifyTransaction(response.reference);
+      },
+    });
+
+    handler.openIframe();
+  };
+
+  const verifyTransaction = async (reference) => {
+    try {
+      const response = await fetch('/api/verify-transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reference }),
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        alert('Transaction verified successfully');
+      } else {
+        alert('Transaction verification failed');
+      }
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      alert('Transaction verification failed');
+    }
+  };
+
+  return (
+    <form id="paymentForm" onSubmit={payWithPaystack}>
+      <input
+        type="email"
+        id="email-address"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        placeholder="Email"
+      />
+      <input
+        type="number"
+        id="amount"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        required
+        placeholder="Amount"
+      />
+      <button type="submit">Pay</button>
+    </form>
+  );
+};
+
+export default PaymentForm;

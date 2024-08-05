@@ -1,5 +1,5 @@
 // src/app/admin/page.tsx
-import AdminLayout from '../../components/AdminLayout';
+import AdminLayout from '../../../components/AdminLayout';
 
 const AdminPage = () => {
   return (
