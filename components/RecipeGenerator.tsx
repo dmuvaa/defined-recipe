@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSession } from 'next-auth/react';
+import { createClient } from '@/utils/supabase/client';
 
 interface Ingredient {
   name: string;
@@ -19,21 +19,32 @@ const RecipeGenerator = () => {
   const [freeAttempts, setFreeAttempts] = useState(0);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const session = await getSession();
-      if (!session) {
-        router.push('/login'); // Redirect to login page if no session is found
+    const fetchUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login'); // Redirect to login page if no user is found
       } else {
         // Fetch user subscription status and free attempts from the server or session
-        setFreeAttempts(session.user.freeAttempts || 0);
-        setIsSubscribed(session.user.isSubscribed || false);
+        const { data, error } = await supabase
+          .from('users')
+          .select('freeAttempts, isSubscribed')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          setError('Failed to fetch user data.');
+        } else {
+          setFreeAttempts(data.freeAttempts);
+          setIsSubscribed(data.isSubscribed);
+        }
       }
     };
 
-    fetchSession();
-  }, [router]);
+    fetchUserData();
+  }, [router, supabase]);
 
   const handleInputChange = (index: number, field: string, value: string) => {
     const newIngredients = [...ingredients];
@@ -50,18 +61,30 @@ const RecipeGenerator = () => {
     setIngredients(newIngredients);
   };
 
+  const updateAttempts = async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ freeAttempts: freeAttempts - 1 })
+        .eq('id', supabase.auth.user()?.id);
+
+      if (error) {
+        console.error('Failed to update attempts:', error.message);
+        setError('Failed to update attempts. Please try again later.');
+      } else {
+        setFreeAttempts(freeAttempts - 1);
+      }
+    } catch (error) {
+      console.error('Error updating attempts:', error);
+      setError('Failed to update attempts. Please try again later.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Redirect to login if no session
-    const session = await getSession();
-    if (!session) {
-      router.push('/login');
-      return;
-    }
-
-    if (!isSubscribed && freeAttempts >= 1) {
-      router.push('/subscribe');
+    if (!isSubscribed && freeAttempts != 0) {
+      setError('You have no free attempts left. Please subscribe to continue.');
       return;
     }
 
@@ -85,8 +108,10 @@ const RecipeGenerator = () => {
         setRecipes([]);
       } else {
         setRecipes(data.recipes);
+
+        // Attempt to update the free attempts
         if (!isSubscribed) {
-          setFreeAttempts(freeAttempts + 1); // Update free attempts
+          await updateAttempts();
         }
       }
     } catch (error: any) {
@@ -189,7 +214,7 @@ const RecipeGenerator = () => {
           </div>
         )}
 
-        {!isSubscribed && freeAttempts >= 1 && (
+        {!isSubscribed && freeAttempts <= 0 && (
           <div className="mt-8 w-full max-w-2xl">
             <h2 className="text-2xl font-bold mb-4">Upgrade to Continue</h2>
             <p className="text-lg text-gray-600 mb-4">

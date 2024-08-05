@@ -1,24 +1,28 @@
 "use client";
 
-import { getSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import RecipeGenerator from '../../components/RecipeGenerator';
-import DashboardHeader from '../../components/DashboardHeader';
-import DashboardFooter from '../../components/DashboardFooter';
+import { createClient } from '@/utils/supabase/client'; // Import Supabase client
+import RecipeGenerator from '../../../components/RecipeGenerator';
+import DashboardHeader from '../../../components/DashboardHeader';
+import DashboardFooter from '../../../components/DashboardFooter';
 
 const Dashboard = () => {
   const [session, setSession] = useState(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 
+  // Initialize Supabase client
+  const supabase = createClient();
+
   useEffect(() => {
     const fetchSession = async () => {
-      const session = await getSession();
-      if (!session) {
+      const { data: sessionData, error } = await supabase.auth.getSession();
+
+      if (error || !sessionData.session) {
         router.push('/login');
       } else {
-        setSession(session);
+        setSession(sessionData.session);
       }
     };
 
@@ -39,7 +43,7 @@ const Dashboard = () => {
     return <p>Loading...</p>;
   }
 
-  const userFirstName = session?.user?.firstName || session?.user?.name?.split(' ')[0] || session?.user?.email;
+  const userFirstName = session.user?.user_metadata?.firstName || session.user?.email.split('@')[0];
 
   return (
     <div className="flex flex-col min-h-screen">

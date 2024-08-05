@@ -2,26 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSession } from "next-auth/react";
+import { createClient } from "@/utils/supabase/client"; // Update with your correct path to supabase client
 
 const Subscribe = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<any>(null);
+  const supabase = createClient(); // Initialize the Supabase client
 
   useEffect(() => {
     const fetchSession = async () => {
-      const session = await getSession();
-      console.log('Initial session:', session);
-      if (!session) {
-        router.push("/login"); // Redirect to login page if no session is found
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Initial session:', user);
+      if (!user) {
+        router.push("/login"); // Redirect to login page if no user is found
       } else {
-        setSession(session);
+        setSession(user);
       }
     };
 
     fetchSession();
-  }, [router]);
+  }, [router, supabase]);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -32,24 +33,24 @@ const Subscribe = () => {
     };
   }, []);
 
-  const handlePaystackPayment = (plan) => {
+  const handlePaystackPayment = (plan: string) => {
     if (!session) {
       alert('You must be logged in to subscribe.');
       return;
     }
 
-    const amount = plan === 'monthly' ? 499 * 100 : 3999 * 100; // Amount in cents
+    const amount = plan === 'monthly' ? 4.99 * 100 : 39.99 * 100; // Amount in cents
     const handler = (window as any).PaystackPop.setup({
       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-      email: session.user.email,
+      email: session.email,
       amount,
       currency: 'USD',
       ref: '' + Math.floor((Math.random() * 1000000000) + 1), // Generate a pseudo-unique reference
       metadata: {
-        userId: session.user.id,  // Ensure userId is included here
+        userId: session.id,  // Ensure userId is included here
         plan,
       },
-      callback: (response) => {
+      callback: (response: any) => {
         fetch(`/api/verify-transaction?reference=${response.reference}`)
           .then((res) => res.json())
           .then((data) => {
