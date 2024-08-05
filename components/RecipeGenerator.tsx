@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,12 +9,18 @@ interface Ingredient {
   quantity: string;
 }
 
+interface User {
+  id: string;
+  freeAttempts: number;
+  isSubscribed: boolean;
+}
+
 const RecipeGenerator = () => {
   const [meal, setMeal] = useState('');
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: '', quantity: '' }]);
   const [numRecipes, setNumRecipes] = useState(1);
   const [recipes, setRecipes] = useState<string[]>([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [freeAttempts, setFreeAttempts] = useState(0);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -23,11 +29,13 @@ const RecipeGenerator = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login'); // Redirect to login page if no user is found
       } else {
-        // Fetch user subscription status and free attempts from the server or session
+        // Fetch user subscription status and free attempts
         const { data, error } = await supabase
           .from('users')
           .select('freeAttempts, isSubscribed')
@@ -36,7 +44,7 @@ const RecipeGenerator = () => {
 
         if (error) {
           setError('Failed to fetch user data.');
-        } else {
+        } else if (data) {
           setFreeAttempts(data.freeAttempts);
           setIsSubscribed(data.isSubscribed);
         }
@@ -46,9 +54,9 @@ const RecipeGenerator = () => {
     fetchUserData();
   }, [router, supabase]);
 
-  const handleInputChange = (index: number, field: string, value: string) => {
+  const handleInputChange = (index: number, field: keyof Ingredient, value: string) => {
     const newIngredients = [...ingredients];
-    newIngredients[index][field as keyof Ingredient] = value;
+    newIngredients[index][field] = value;
     setIngredients(newIngredients);
   };
 
@@ -63,33 +71,42 @@ const RecipeGenerator = () => {
 
   const updateAttempts = async () => {
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+      if (userError || !user) {
+        console.error('Failed to retrieve user:', userError?.message);
+        setError('Failed to retrieve user. Please try again later.');
+        return;
+      }
+  
       const { error } = await supabase
         .from('users')
         .update({ freeAttempts: freeAttempts - 1 })
-        .eq('id', supabase.auth.user()?.id);
-
+        .eq('id', user.id);
+  
       if (error) {
         console.error('Failed to update attempts:', error.message);
         setError('Failed to update attempts. Please try again later.');
       } else {
         setFreeAttempts(freeAttempts - 1);
       }
-    } catch (error) {
-      console.error('Error updating attempts:', error);
+    } catch (error: any) {
+      console.error('Error updating attempts:', error.message);
       setError('Failed to update attempts. Please try again later.');
     }
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isSubscribed && freeAttempts != 0) {
+    if (!isSubscribed && freeAttempts <= 0) {
       setError('You have no free attempts left. Please subscribe to continue.');
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError(null);
     setRecipes([]);
 
     try {
@@ -115,6 +132,7 @@ const RecipeGenerator = () => {
         }
       }
     } catch (error: any) {
+      console.error('An error occurred while generating recipes:', error.message);
       setError('An error occurred while generating recipes.');
       setRecipes([]);
     } finally {
@@ -126,7 +144,9 @@ const RecipeGenerator = () => {
     <div className="container mx-auto p-8">
       <header className="text-center my-8">
         <h1 className="text-4xl font-bold mb-4">Best Recipe Generator</h1>
-        <p className="text-lg text-gray-600">Enter your meal and ingredients to get delicious recipes generated for you!</p>
+        <p className="text-lg text-gray-600">
+          Enter your meal and ingredients to get delicious recipes generated for you!
+        </p>
       </header>
 
       <main className="flex flex-col items-center">
