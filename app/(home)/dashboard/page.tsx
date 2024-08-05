@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Session } from '@supabase/supabase-js'; // Import the Session type from the supabase-js module
+import { Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client'; // Import Supabase client
+import { createClient } from '@/utils/supabase/client';
 import RecipeGenerator from '../../../components/RecipeGenerator';
 import DashboardHeader from '../../../components/DashboardHeader';
 import DashboardFooter from '../../../components/DashboardFooter';
@@ -12,29 +12,32 @@ const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
-
-  // Initialize Supabase client
   const supabase = createClient();
 
   useEffect(() => {
     const fetchSession = async () => {
-      const { data: sessionData, error } = await supabase.auth.getSession();
+      try {
+        const { data: sessionData, error } = await supabase.auth.getSession();
 
-      if (error || !sessionData.session) {
+        if (error || !sessionData.session) {
+          router.push('/login');
+        } else {
+          setSession(sessionData.session);
+        }
+      } catch (err) {
+        console.error('Error fetching session:', err);
         router.push('/login');
-      } else {
-        setSession(sessionData.session);
       }
     };
 
     fetchSession();
-  }, [router]);
+  }, [router, supabase]);
 
   useEffect(() => {
     if (showWelcome) {
       const timer = setTimeout(() => {
         setShowWelcome(false);
-      }, 30000); // 30 seconds
+      }, 30000);
 
       return () => clearTimeout(timer);
     }
@@ -44,7 +47,7 @@ const Dashboard = () => {
     return <p>Loading...</p>;
   }
 
-  const userFirstName = session.user?.user_metadata?.firstName || session.user?.email.split('@')[0];
+  const userFirstName = session.user?.user_metadata?.firstName || session.user?.email?.split('@')[0] || 'User';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -52,7 +55,9 @@ const Dashboard = () => {
       <main className="flex-grow container mx-auto p-8">
         {showWelcome && (
           <div className="bg-green-100 p-6 rounded-lg shadow-lg mb-4">
-            <h1 className="text-3xl font-bold text-green-800 mb-4">Welcome, {userFirstName}!</h1>
+            <h1 className="text-3xl font-bold text-green-800 mb-4">
+              Welcome, {userFirstName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}!
+            </h1>
           </div>
         )}
         <div className="bg-green-100 p-6 rounded-lg shadow-lg mb-4">
@@ -66,7 +71,7 @@ const Dashboard = () => {
           </p>
           <p className="text-lg text-green-700 mb-4">
             Get started now and discover a world of flavors. From quick weeknight dinners to elaborate gourmet dishes, our recipe 
-            generator has got you covered. Let's make cooking fun and easy!
+            generator has got you covered. Let&apos;s make cooking fun and easy!
           </p>
         </div>
         <div className="mt-8">
