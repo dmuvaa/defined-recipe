@@ -3,7 +3,7 @@ import { prisma } from '../../lib/prisma';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.PAYSTACK_SECRET_KEY;
+  const secret = process.env.PAYSTACK_SECRET_KEY || '';
 
   // Retrieve the raw body as a string to validate the Paystack signature
   const text = await req.text();

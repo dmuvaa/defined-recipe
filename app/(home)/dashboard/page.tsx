@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { Session } from '@supabase/supabase-js'; // Import the Session type from the supabase-js module
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client'; // Import Supabase client
 import RecipeGenerator from '../../../components/RecipeGenerator';
@@ -8,7 +9,7 @@ import DashboardHeader from '../../../components/DashboardHeader';
 import DashboardFooter from '../../../components/DashboardFooter';
 
 const Dashboard = () => {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const router = useRouter();
 

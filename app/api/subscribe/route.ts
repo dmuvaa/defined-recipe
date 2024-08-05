@@ -1,47 +1,12 @@
-// import { NextApiRequest, NextApiResponse } from 'next';
-// import { prisma } from '../../lib/prisma';
-
-// export async function POST(req: NextApiRequest, res: NextApiResponse) {
-//   const { userId, plan, startDate, endDate } = req.body;
-
-//   try {
-//     const subscription = await prisma.subscription.create({
-//       data: {
-//         userId,
-//         plan,
-//         status: 'active',
-//         startDate,
-//         endDate,
-//       },
-//     });
-
-//     // Update user subscription status to active
-//     await prisma.user.update({
-//       where: { id: userId },
-//       data: { isSubscribed: true },
-//     });
-
-//     res.status(200).json(subscription);
-//   } catch (error) {
-//     console.error('Error creating subscription:', error);
-//     res.status(500).json({ error: 'Error creating subscription' });
-//   }
-// }
-
-// export function GET(req: NextApiRequest, res: NextApiResponse) {
-//   res.setHeader('Allow', ['POST']);
-//   res.status(405).end(`Method ${req.method} Not Allowed`);
-// }
-
-
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../lib/prisma';
 
-export async function POST(req: NextRequest, res: NextResponse) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId, plan, startDate, endDate } = req.body;
+    const { userId, plan, startDate, endDate } = await req.json();
+
     if (!userId || !plan || !startDate || !endDate) {
-      throw new Error('Invalid input');
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
     const subscription = await prisma.subscription.create({
@@ -54,14 +19,24 @@ export async function POST(req: NextRequest, res: NextResponse) {
       },
     });
 
-    res.status(200).json(subscription);
+    // Update user subscription status to active
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isSubscribed: true },
+    });
+
+    return NextResponse.json(subscription, { status: 200 });
   } catch (error) {
     console.error('Error creating subscription:', error);
-    res.status(500).json({ error: 'Error creating subscription' });
+    return NextResponse.json({ error: 'Error creating subscription' }, { status: 500 });
   }
 }
 
-export function GET(req: NextApiRequest, res: NextApiResponse) {
-  res.setHeader('Allow', ['POST']);
-  res.status(405).end(`Method ${req.method} Not Allowed`);
+export function GET(req: NextRequest) {
+  return new NextResponse(`Method ${req.method} Not Allowed`, {
+    status: 405,
+    headers: {
+      'Allow': 'POST',
+    },
+  });
 }

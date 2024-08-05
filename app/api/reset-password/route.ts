@@ -25,13 +25,11 @@ export async function POST(req: NextRequest) {
       where: { email: user.email },
       data: {
         password: hashedPassword,
-        resetToken: null,
-        resetTokenExpiry: null,
       },
     });
 
     return NextResponse.json({ message: 'Password reset successfully' });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

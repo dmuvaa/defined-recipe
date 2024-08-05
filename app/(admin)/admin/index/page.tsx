@@ -1,26 +1,38 @@
-"use client"
+"use client";
 
-import { getSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import AdminHeader from '../../../../components/AdminHeader';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import AdminHeader from "../../../../components/AdminHeader";
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const session = await getSession();
-      if (!session || !session.isAdmin) {
-        router.push('/admin/login');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/admin/login");
       } else {
-        setLoading(false);
+        const { data: user } = await supabase
+          .from("users")
+          .select("isAdmin")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!user?.isAdmin) {
+          router.push("/admin/login");
+        } else {
+          setLoading(false);
+        }
       }
     };
 
     checkAdmin();
-  }, [router]);
+  }, [router, supabase]);
 
   if (loading) {
     return <p>Loading...</p>;

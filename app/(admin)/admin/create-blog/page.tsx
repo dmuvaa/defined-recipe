@@ -1,43 +1,70 @@
-"use client"
+"use client";
 
-import { getSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import AdminHeader from '../../../../components/AdminHeader';
-import dynamic from 'next/dynamic';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import AdminHeader from "../../../../components/AdminHeader";
+import dynamic from "next/dynamic";
+import { createClient } from "@/utils/supabase/client";
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const CreateBlogPage = () => {
-  const [loading, setLoading] = useState(true);
-  const [title, setTitle] = useState('');
-  const [url, setUrl] = useState('');
-  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [title, setTitle] = useState<string>("");
+  const [url, setUrl] = useState<string>("");
+  const [content, setContent] = useState<string>("");
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const session = await getSession();
-      if (!session || !session.isAdmin) {
-        router.push('/admin/login');
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        router.push("/admin/login");
       } else {
-        setLoading(false);
+        const { data: user, error: userError } = await supabase
+          .from("users")
+          .select("isAdmin")
+          .eq("id", session.user.id)
+          .single();
+
+        if (userError || !user?.isAdmin) {
+          router.push("/admin/login");
+        } else {
+          setLoading(false);
+        }
       }
     };
 
     checkAdmin();
-  }, [router]);
+  }, [router, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      // Submit the blog post to your backend
-      // const response = await axios.post('/api/blogs', { title, url, content, authorId: session.userId });
-      // if (response.status === 201) {
-      //   router.push('/admin/blogs');
-      // }
+      const { data, error } = await supabase.from("blogs").insert([
+        {
+          title,
+          url,
+          content,
+          author_id: supabase.auth.user()?.id ?? null,
+        },
+      ]);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        router.push("/admin/blogs");
+      }
     } catch (error) {
-      console.error('Failed to create blog post', error);
+      console.error("Failed to create blog post", error);
     }
   };
 

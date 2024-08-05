@@ -3,23 +3,24 @@
 "use client"
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 
 const PaymentCallback = () => {
   const router = useRouter();
-  const { reference } = router.query;
+  const searchParams = useSearchParams();
+  const reference = searchParams.get('reference');
 
   useEffect(() => {
     if (reference) {
-      verifyTransaction(reference as string);
+      verifyTransaction(reference);
     }
   }, [reference]);
 
   const verifyTransaction = async (reference: string) => {
     try {
       const response = await axios.get(`/api/verify-transaction?reference=${reference}`);
-      const { success, message } = response.data;
+      const { success } = response.data;
       if (success) {
         alert('Payment successful! Subscription updated.');
         router.push('/success');
@@ -33,12 +34,7 @@ const PaymentCallback = () => {
     }
   };
 
-  return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">Processing Payment...</h1>
-      <p>Please wait while we verify your payment.</p>
-    </div>
-  );
+  return <p>Verifying payment...</p>;
 };
 
 export default PaymentCallback;
