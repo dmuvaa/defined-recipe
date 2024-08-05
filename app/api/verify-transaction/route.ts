@@ -64,7 +64,7 @@ export const GET = async (req: NextRequest) => {
           status: 200,
           headers: responseHeaders,
         });
-      } catch (dbError) {
+      } catch (dbError: any) {
         console.error('Database error:', dbError);
         return NextResponse.json({ success: false, message: `Database update error: ${dbError.message}` }, { status: 500 });
       }
