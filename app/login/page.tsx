@@ -34,9 +34,12 @@ export default function Login({
     const origin = headers().get("origin");
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signUp({
+    // Sign up with Supabase
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -48,7 +51,20 @@ export default function Login({
       return redirect("/login?message=Could not authenticate user");
     }
 
-    return redirect("/login?message=Check email to continue sign in process");
+    // If sign-up is successful, store additional fields in your User table
+    if (data?.user) {
+      const { id } = data.user;
+      await supabase
+        .from("User")
+        .insert({
+          id, // user ID from Supabase
+          email,
+          firstName,
+          lastName,
+        });
+    }
+
+    return redirect("/login?message=Check your email to continue the sign-up process");
   };
 
   return (
@@ -93,6 +109,22 @@ export default function Login({
           name="password"
           placeholder="••••••••"
           required
+        />
+        <label className="text-md" htmlFor="firstName">
+          First Name
+        </label>
+        <input
+          className="rounded-md px-4 py-2 bg-inherit border mb-6"
+          name="firstName"
+          placeholder="John"
+        />
+        <label className="text-md" htmlFor="lastName">
+          Last Name
+        </label>
+        <input
+          className="rounded-md px-4 py-2 bg-inherit border mb-6"
+          name="lastName"
+          placeholder="Doe"
         />
         <SubmitButton
           formAction={signIn}
