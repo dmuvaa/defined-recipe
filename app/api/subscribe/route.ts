@@ -19,16 +19,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Update user subscription status to active
     await prisma.user.update({
       where: { id: userId },
       data: { isSubscribed: true },
     });
 
     return NextResponse.json(subscription, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating subscription:', error);
-    return NextResponse.json({ error: 'Error creating subscription' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error creating subscription' }, { status: 500 });
   }
 }
 
